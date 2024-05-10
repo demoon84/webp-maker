@@ -1,19 +1,26 @@
 {
   "name": "webp-maker",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "webp maker",
   "main": "src/index.js",
   "scripts": {
-    "test": "node ./webp.js"
-  },
-  "author": "문경태(kyung tae Moon)",
-  "license": "MIT",
-  "repository": {
-    "type": "git"
+    "test": "node ./test/webp.js"
   },
   "dependencies": {
     "file-system": "^2.2.2",
     "fs-extra": "^10.1.0",
     "webp-converter": "^2.3.3"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/demoon84/webp-maker.git"
+  },
+  "keywords": [
+    "webp",
+    "image",
+    "animated webp"
+  ],
+  "email": "demoon84@gmail.com",
+  "author": "문경태(kyung tae Moon)",
+  "license": "MIT"
 }
