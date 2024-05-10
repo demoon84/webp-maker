@@ -9,8 +9,6 @@
 $ npm install -D webp-maker
 ```
 
-nodejs v12.x.x 이상 필요
-
 ## use
 
 ``` js
