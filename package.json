@@ -1,0 +1,19 @@
+{
+  "name": "webp-maker",
+  "version": "0.0.1",
+  "description": "webp maker",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node ./webp.js"
+  },
+  "author": "문경태(kyung tae Moon)",
+  "license": "MIT",
+  "repository": {
+    "type": "git"
+  },
+  "dependencies": {
+    "file-system": "^2.2.2",
+    "fs-extra": "^10.1.0",
+    "webp-converter": "^2.3.3"
+  }
+}
