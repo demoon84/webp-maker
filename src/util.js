@@ -1,9 +1,6 @@
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
-
-exports.removeEndSlash = (targetPath) => {
-	return targetPath.replace(/[\\/]+$/, '');
-};
 
 exports.isDirectory = (targetPath) => {
 	return fs.lstatSync(targetPath).isDirectory();
@@ -38,21 +35,75 @@ exports.ensureNumber = (value, fieldName, {min, max, integer = false} = {}) => {
 };
 
 exports.collectFiles = (rootPath, matcher) => {
-	const entries = fs.readdirSync(rootPath, {withFileTypes: true});
 	const result = [];
+	const pending = [rootPath];
 
-	entries.forEach((entry) => {
-		const absolutePath = path.join(rootPath, entry.name);
+	while (pending.length > 0) {
+		const currentPath = pending.pop();
+		const entries = fs.readdirSync(currentPath, {withFileTypes: true});
 
-		if (entry.isDirectory()) {
-			result.push(...exports.collectFiles(absolutePath, matcher));
-			return;
-		}
+		entries.forEach((entry) => {
+			const absolutePath = path.join(currentPath, entry.name);
 
-		if (matcher(absolutePath, entry.name)) {
-			result.push(absolutePath);
+			if (entry.isDirectory()) {
+				pending.push(absolutePath);
+				return;
+			}
+
+			if (matcher(absolutePath, entry.name)) {
+				result.push(absolutePath);
+			}
+		});
+	}
+
+	return result;
+};
+
+exports.ensureDirectory = (targetPath) => {
+	fs.mkdirSync(targetPath, {recursive: true});
+};
+
+exports.defaultConcurrency = () => {
+	const parallelism = typeof os.availableParallelism === 'function'
+		? os.availableParallelism()
+		: os.cpus().length;
+
+	if (parallelism <= 1) {
+		return 1;
+	}
+
+	return Math.min(parallelism - 1, 8);
+};
+
+exports.runWithConcurrency = async (items, concurrency, worker) => {
+	if (items.length === 0) {
+		return [];
+	}
+
+	const results = new Array(items.length);
+	const workerCount = Math.min(concurrency, items.length);
+	let index = 0;
+	let stopped = false;
+
+	const workers = Array.from({length: workerCount}, async () => {
+		while (!stopped) {
+			const currentIndex = index;
+			index += 1;
+
+			if (currentIndex >= items.length) {
+				return;
+			}
+
+			try {
+				results[currentIndex] = await worker(items[currentIndex], currentIndex);
+			} catch (error) {
+				stopped = true;
+				throw error;
+			}
 		}
 	});
 
-	return result;
+	await Promise.all(workers);
+
+	return results;
 };

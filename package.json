@@ -1,6 +1,6 @@
 {
   "name": "webp-maker",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Convert images to WebP and build animated WebP via CLI or Node.js",
   "main": "src/index.js",
   "files": [
@@ -12,11 +12,9 @@
     "webp-maker": "bin/webp-maker.js"
   },
   "scripts": {
-    "test": "node ./test/run.js"
+    "test": "node ./scripts/smoke-test.js"
   },
   "dependencies": {
-    "file-system": "^2.2.2",
-    "fs-extra": "^10.1.0",
     "webp-converter": "^2.3.3"
   },
   "repository": {

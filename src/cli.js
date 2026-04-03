@@ -6,9 +6,9 @@ const HELP_TEXT = `
 webp-maker
 
 Usage
-  webp-maker cwebp --from <path> --to <dir> [--quality <0-100>] [--config <file>] [--json]
+  webp-maker cwebp --from <path> --to <dir> [--quality <0-100>] [--concurrency <number>] [--config <file>] [--json]
   webp-maker awebp --from <dir> --to <file> [--fps <number>] [--repeat <number>] [--config <file>] [--json]
-  webp-maker pipeline --from <path> --webp-dir <dir> --to <file> [--quality <0-100>] [--fps <number>] [--repeat <number>] [--config <file>] [--json]
+  webp-maker pipeline --from <path> --webp-dir <dir> --to <file> [--quality <0-100>] [--concurrency <number>] [--fps <number>] [--repeat <number>] [--config <file>] [--json]
 
 Commands
   cwebp      Convert PNG/JPG files to .webp
@@ -20,6 +20,7 @@ Options
   --to         Output directory for cwebp, output file for awebp/pipeline
   --webp-dir   Intermediate .webp directory used by pipeline
   --quality    Conversion quality for cwebp (default: 75)
+  --concurrency Number of parallel cwebp conversions
   --fps        Frames per second for awebp (default: 30)
   --repeat     Animation loop count for awebp (default: 0)
   --config     JSON config file. CLI flags override config file values.
@@ -27,9 +28,9 @@ Options
   --help       Show this help
 
 Examples
-  webp-maker cwebp --from ./origin --to ./webp --quality 90
+  webp-maker cwebp --from ./origin --to ./webp --quality 90 --concurrency 4
   webp-maker awebp --from ./webp --to ./awebp/ani.webp --fps 10
-  webp-maker pipeline --from ./origin --webp-dir ./webp --to ./awebp/ani.webp --quality 90 --fps 10 --json
+  webp-maker pipeline --from ./origin --webp-dir ./webp --to ./awebp/ani.webp --quality 90 --concurrency 4 --fps 10 --json
 `.trim();
 
 const COMMAND_ALIASES = {
@@ -178,6 +179,7 @@ async function runCommand(command, options) {
 				from: options.from,
 				to: options.webpDir,
 				quality: options.quality,
+				concurrency: options.concurrency,
 				log: false
 			}));
 			const animateResult = await awebp(withoutUndefined({

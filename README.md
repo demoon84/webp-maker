@@ -19,7 +19,7 @@ npx webp-maker --help
 Convert images to `.webp`:
 
 ```bash
-webp-maker cwebp --from ./origin --to ./webp --quality 90
+webp-maker cwebp --from ./origin --to ./webp --quality 90 --concurrency 4
 ```
 
 Build an animated `.webp` from converted frames:
@@ -36,6 +36,7 @@ webp-maker pipeline \
   --webp-dir ./webp \
   --to ./awebp/ani.webp \
   --quality 90 \
+  --concurrency 4 \
   --fps 10 \
   --json
 ```
@@ -44,6 +45,8 @@ webp-maker pipeline \
 
 The CLI is non-interactive and uses explicit long option names only, which makes it easy to call from scripts, CI, and AI agents.
 
+For `cwebp`, the default concurrency is chosen automatically from available CPU cores and capped at `8`.
+
 ### Commands
 
 #### `cwebp`
@@ -51,7 +54,7 @@ The CLI is non-interactive and uses explicit long option names only, which makes
 Convert a single file or a directory of `png`, `jpg`, `jpeg` files to `.webp`.
 
 ```bash
-webp-maker cwebp --from ./origin --to ./webp --quality 90
+webp-maker cwebp --from ./origin --to ./webp --quality 90 --concurrency 4
 ```
 
 | Option | Required | Default | Description |
@@ -59,6 +62,7 @@ webp-maker cwebp --from ./origin --to ./webp --quality 90
 | `--from` | yes |  | source file or directory |
 | `--to` | yes |  | output directory |
 | `--quality` | no | `75` | output quality from `0` to `100` |
+| `--concurrency` | no | `auto` | number of parallel conversions, capped automatically |
 | `--config` | no |  | JSON config file |
 | `--json` | no | `false` | print machine-readable JSON |
 
@@ -84,7 +88,7 @@ webp-maker awebp --from ./webp --to ./awebp/ani.webp --fps 10 --repeat 0
 Run `cwebp` first and then `awebp` in one command.
 
 ```bash
-webp-maker pipeline --from ./origin --webp-dir ./webp --to ./awebp/ani.webp --quality 90 --fps 10 --json
+webp-maker pipeline --from ./origin --webp-dir ./webp --to ./awebp/ani.webp --quality 90 --concurrency 4 --fps 10 --json
 ```
 
 | Option | Required | Default | Description |
@@ -93,6 +97,7 @@ webp-maker pipeline --from ./origin --webp-dir ./webp --to ./awebp/ani.webp --qu
 | `--webp-dir` | yes |  | intermediate `.webp` directory |
 | `--to` | yes |  | output animated `.webp` file |
 | `--quality` | no | `75` | output quality for `cwebp` |
+| `--concurrency` | no | `auto` | number of parallel conversions for `cwebp` |
 | `--fps` | no | `30` | frames per second for `awebp` |
 | `--repeat` | no | `0` | animation loop count |
 | `--config` | no |  | JSON config file |
@@ -108,6 +113,7 @@ CLI flags override values from the config file.
   "webpDir": "./webp",
   "to": "./awebp/ani.webp",
   "quality": 90,
+  "concurrency": 4,
   "fps": 10,
   "repeat": 0
 }
@@ -132,6 +138,7 @@ Success example:
     "from": "./origin",
     "to": "./webp",
     "quality": 90,
+    "concurrency": 4,
     "count": 6,
     "files": [
       {
@@ -161,7 +168,8 @@ async function run() {
   const converted = await cwebp({
     from: './origin',
     to: './webp',
-    quality: 90
+    quality: 90,
+    concurrency: 4
   });
 
   const animated = await awebp({
@@ -184,6 +192,7 @@ run();
 | `from` | `string` |  | source file or directory |
 | `to` | `string` |  | output directory |
 | `quality` | `number` | `75` | output quality |
+| `concurrency` | `number` | `auto` | number of parallel conversions |
 | `log` | `boolean` | `true` | print progress logs |
 
 Returns a Promise that resolves to a conversion summary object.
@@ -207,3 +216,5 @@ Run the test suite:
 ```bash
 npm test
 ```
+
+The smoke test generates tiny temporary images at runtime, so the repository does not need to keep binary test fixtures.

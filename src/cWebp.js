@@ -1,13 +1,14 @@
 const fs = require('fs');
 const path = require('path');
-const fsExtra = require('fs-extra');
 const webp = require('webp-converter');
 const {
-	removeEndSlash,
 	isDirectory,
 	ensureValue,
 	ensureNumber,
-	collectFiles
+	collectFiles,
+	ensureDirectory,
+	defaultConcurrency,
+	runWithConcurrency
 } = require('./util');
 
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg']);
@@ -18,37 +19,32 @@ class cWebp {
 			from: '',
 			to: '',
 			quality: 75,
+			concurrency: defaultConcurrency(),
 			log: true,
 			...config
 		};
+		this.fromIsDirectory = false;
+		this.createdDirectories = new Set();
 	}
 
 	async run() {
 		this.validate();
+		this.fromIsDirectory = isDirectory(this.config.from);
+		this.createdDirectories = new Set();
 
 		const sourceFiles = this.detectSourceFiles();
-		const converted = [];
-
-		for (const sourceFile of sourceFiles) {
-			const targetFile = this.toPath(this.relativePath(sourceFile));
-
-			fsExtra.ensureDirSync(path.dirname(targetFile));
-
-			await webp.cwebp(sourceFile, targetFile, `-q ${this.config.quality}`);
-
-			converted.push({
-				from: sourceFile,
-				to: targetFile
-			});
-
-			this.log(`${sourceFile} => ${targetFile}`);
-		}
+		const converted = await runWithConcurrency(
+			sourceFiles,
+			this.config.concurrency,
+			async (sourceFile) => this.convert(sourceFile)
+		);
 
 		const summary = {
 			command: 'cwebp',
 			from: this.config.from,
 			to: this.config.to,
 			quality: this.config.quality,
+			concurrency: this.config.concurrency,
 			count: converted.length,
 			files: converted
 		};
@@ -70,10 +66,15 @@ class cWebp {
 			min: 0,
 			max: 100
 		});
+		this.config.concurrency = ensureNumber(this.config.concurrency, 'concurrency', {
+			min: 1,
+			max: 32,
+			integer: true
+		});
 	}
 
 	detectSourceFiles() {
-		if (isDirectory(this.config.from)) {
+		if (this.fromIsDirectory) {
 			const files = collectFiles(this.config.from, (absolutePath) => {
 				return IMAGE_EXTENSIONS.has(path.extname(absolutePath).toLowerCase());
 			});
@@ -92,16 +93,44 @@ class cWebp {
 		return [this.config.from];
 	}
 
+	async convert(sourceFile) {
+		const targetFile = this.toPath(this.relativePath(sourceFile));
+		this.ensureOutputDirectory(path.dirname(targetFile));
+
+		await webp.cwebp(sourceFile, targetFile, `-q ${this.config.quality}`);
+
+		const result = {
+			from: sourceFile,
+			to: targetFile
+		};
+
+		this.log(`${sourceFile} => ${targetFile}`);
+
+		return result;
+	}
+
 	relativePath(sourceFile) {
-		if (!isDirectory(this.config.from)) {
+		if (!this.fromIsDirectory) {
 			return path.basename(sourceFile);
 		}
 
 		return path.relative(this.config.from, sourceFile);
 	}
 
+	ensureOutputDirectory(targetDirectory) {
+		if (this.createdDirectories.has(targetDirectory)) {
+			return;
+		}
+
+		ensureDirectory(targetDirectory);
+		this.createdDirectories.add(targetDirectory);
+	}
+
 	toPath(fromFileName) {
-		return `${removeEndSlash(this.config.to)}/${fromFileName}`.replace(path.extname(fromFileName), '.webp');
+		const outputPath = path.join(this.config.to, fromFileName);
+		const parsedPath = path.parse(outputPath);
+
+		return path.join(parsedPath.dir, `${parsedPath.name}.webp`);
 	}
 
 	log(message) {

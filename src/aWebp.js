@@ -1,12 +1,9 @@
 const fs = require('fs');
 const path = require('path');
-const fsExtra = require('fs-extra');
 const webp = require('webp-converter');
-const {removeEndSlash, ensureValue, ensureNumber} = require('./util');
+const {ensureValue, ensureNumber, ensureDirectory} = require('./util');
 
 class aWebp {
-	#inputFiles = [];
-
 	constructor(config = {}) {
 		this.config = {
 			from: '',
@@ -21,11 +18,10 @@ class aWebp {
 	async run() {
 		this.validate();
 
-		this.#inputFiles = this.detectFiles();
+		const inputFiles = this.detectFiles();
+		const frames = this.makeInputData(inputFiles);
 
-		const frames = this.makeInputData();
-
-		fsExtra.ensureDirSync(path.dirname(this.config.to));
+		ensureDirectory(path.dirname(this.config.to));
 
 		await webp.webpmux_animate(frames, this.config.to, this.config.repeat, '0,255,255,255', '');
 
@@ -77,18 +73,14 @@ class aWebp {
 		return files;
 	}
 
-	makeInputData() {
-		const result = [];
+	makeInputData(inputFiles) {
 		const delay = Math.floor(1000 / this.config.fps);
+		const sourceDirectory = this.config.from;
 
-		this.#inputFiles.forEach((fileName) => {
-			result.push({
-				path: `${removeEndSlash(this.config.from)}/${fileName}`,
-				offset: `+${delay}+0+0+0-b`
-			});
-		});
-
-		return result;
+		return inputFiles.map((fileName) => ({
+			path: path.join(sourceDirectory, fileName),
+			offset: `+${delay}+0+0+0-b`
+		}));
 	}
 
 	log(message) {
