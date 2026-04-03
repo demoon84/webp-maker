@@ -3,6 +3,11 @@
   "version": "1.1.0",
   "description": "Convert images to WebP and build animated WebP via CLI or Node.js",
   "main": "src/index.js",
+  "files": [
+    "bin",
+    "src",
+    "README.md"
+  ],
   "bin": {
     "webp-maker": "bin/webp-maker.js"
   },
@@ -16,7 +21,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/demoon84/webp-maker.git"
+    "url": "git+https://github.com/demoon84/webp-maker.git"
   },
   "keywords": [
     "webp",
