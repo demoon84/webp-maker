@@ -119,8 +119,16 @@ CLI flags override values from the config file.
 }
 ```
 
+Example file in this repository:
+
+[`examples/ai-pipeline.config.json`](/Users/demoon/Documents/project/webp-maker/examples/ai-pipeline.config.json)
+
 ```bash
 webp-maker pipeline --config ./webp-maker.json --json
+```
+
+```bash
+webp-maker pipeline --config ./examples/ai-pipeline.config.json --json
 ```
 
 ### JSON Output
