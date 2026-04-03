@@ -1,56 +1,209 @@
-# webp maker
+# webp-maker
 
-* Transform PNG, JPG files to webp.
-* Create animated webp.
+Convert PNG/JPG images to `.webp` and build animated `.webp` files from the command line or from Node.js.
 
-## install
+## Install
 
-``` bash
-$ npm install -D webp-maker
+```bash
+npm install webp-maker
 ```
 
-## use
+Check the CLI:
 
-``` js
-// webp.js
-
-// Transform PNG files from the folder into webp files.
-cwebp({
-	from: './origin',
-	to: './webp',
-	quality: 90
-}).then(() => {
-// Create an animated webp with the transformed webp file.
-	awebp({
-		from: './webp',
-		fps:10,
-		to: './awebp/ani.webp'
-	});
-});
+```bash
+npx webp-maker --help
 ```
 
-## Methods
+## Quick Start
 
-### cwebp
-Transform PNG, JPG files to webp.
+Convert images to `.webp`:
 
-| Name    | Type   | Default | description       |
-|---------|--------|---------|-------------------|
-| from    | String |         | 변환 폴더 경로 또는 파일 경로 |
-| to      | String |         | 변환 완료 폴더  경로      | 
-| quality | Number | 75      | 변환 품질             |
+```bash
+webp-maker cwebp --from ./origin --to ./webp --quality 90
+```
 
-### awebp
-Create animated webp.
+Build an animated `.webp` from converted frames:
 
-| Name   | Type   | Default | description          |
-|--------|--------|---------|----------------------|
-| from   | String |         | 변환 대상 .webp 파일 폴더 경로 |
-| to     | String |         | 변환 완료 .webp 파일 경로    | 
-| fps    | Number | 0       |                      |
-| repeat | Number | 75      | 반복 횟수                |
+```bash
+webp-maker awebp --from ./webp --to ./awebp/ani.webp --fps 10
+```
 
-#### awebp sample
+Run the full flow in one command:
 
-![Alt text of the image](https://github.com/demoon84/webp-maker/blob/master/test/awebp/ani.webp)
+```bash
+webp-maker pipeline \
+  --from ./origin \
+  --webp-dir ./webp \
+  --to ./awebp/ani.webp \
+  --quality 90 \
+  --fps 10 \
+  --json
+```
 
+## CLI
+
+The CLI is non-interactive and uses explicit long option names only, which makes it easy to call from scripts, CI, and AI agents.
+
+### Commands
+
+#### `cwebp`
+
+Convert a single file or a directory of `png`, `jpg`, `jpeg` files to `.webp`.
+
+```bash
+webp-maker cwebp --from ./origin --to ./webp --quality 90
+```
+
+| Option | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--from` | yes |  | source file or directory |
+| `--to` | yes |  | output directory |
+| `--quality` | no | `75` | output quality from `0` to `100` |
+| `--config` | no |  | JSON config file |
+| `--json` | no | `false` | print machine-readable JSON |
+
+#### `awebp`
+
+Create an animated `.webp` from a directory of `.webp` frames.
+
+```bash
+webp-maker awebp --from ./webp --to ./awebp/ani.webp --fps 10 --repeat 0
+```
+
+| Option | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--from` | yes |  | source `.webp` directory |
+| `--to` | yes |  | output animated `.webp` file |
+| `--fps` | no | `30` | frames per second |
+| `--repeat` | no | `0` | animation loop count |
+| `--config` | no |  | JSON config file |
+| `--json` | no | `false` | print machine-readable JSON |
+
+#### `pipeline`
+
+Run `cwebp` first and then `awebp` in one command.
+
+```bash
+webp-maker pipeline --from ./origin --webp-dir ./webp --to ./awebp/ani.webp --quality 90 --fps 10 --json
+```
+
+| Option | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--from` | yes |  | source file or directory |
+| `--webp-dir` | yes |  | intermediate `.webp` directory |
+| `--to` | yes |  | output animated `.webp` file |
+| `--quality` | no | `75` | output quality for `cwebp` |
+| `--fps` | no | `30` | frames per second for `awebp` |
+| `--repeat` | no | `0` | animation loop count |
+| `--config` | no |  | JSON config file |
+| `--json` | no | `false` | print machine-readable JSON |
+
+### Config File
+
+CLI flags override values from the config file.
+
+```json
+{
+  "from": "./origin",
+  "webpDir": "./webp",
+  "to": "./awebp/ani.webp",
+  "quality": 90,
+  "fps": 10,
+  "repeat": 0
+}
+```
+
+```bash
+webp-maker pipeline --config ./webp-maker.json --json
+```
+
+### JSON Output
+
+When `--json` is enabled, the CLI prints structured output and uses exit code `0` on success, `1` on failure.
+
+Success example:
+
+```json
+{
+  "ok": true,
+  "command": "cwebp",
+  "result": {
+    "command": "cwebp",
+    "from": "./origin",
+    "to": "./webp",
+    "quality": 90,
+    "count": 6,
+    "files": [
+      {
+        "from": "./origin/1.png",
+        "to": "./webp/1.webp"
+      }
+    ]
+  }
+}
+```
+
+Error example:
+
+```json
+{
+  "ok": false,
+  "error": "..."
+}
+```
+
+## Library
+
+```js
+const {cwebp, awebp} = require('webp-maker');
+
+async function run() {
+  const converted = await cwebp({
+    from: './origin',
+    to: './webp',
+    quality: 90
+  });
+
+  const animated = await awebp({
+    from: './webp',
+    to: './awebp/ani.webp',
+    fps: 10,
+    repeat: 0
+  });
+
+  console.log(converted.count, animated.to);
+}
+
+run();
+```
+
+### `cwebp(config)`
+
+| Field | Type | Default | Description |
+|------|------|---------|-------------|
+| `from` | `string` |  | source file or directory |
+| `to` | `string` |  | output directory |
+| `quality` | `number` | `75` | output quality |
+| `log` | `boolean` | `true` | print progress logs |
+
+Returns a Promise that resolves to a conversion summary object.
+
+### `awebp(config)`
+
+| Field | Type | Default | Description |
+|------|------|---------|-------------|
+| `from` | `string` |  | source `.webp` directory |
+| `to` | `string` |  | output animated `.webp` file |
+| `fps` | `number` | `30` | frames per second |
+| `repeat` | `number` | `0` | animation loop count |
+| `log` | `boolean` | `true` | print progress logs |
+
+Returns a Promise that resolves to an animation summary object.
+
+## Development
+
+Run the test suite:
+
+```bash
+npm test
+```

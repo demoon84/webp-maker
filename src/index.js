@@ -2,10 +2,6 @@ const cWebp = require('./cWebp');
 const aWebp = require('./aWebp');
 
 module.exports = {
-	cwebp: (config) => {
-		return new Promise(resolve => {
-			new cWebp(config, resolve);
-		});
-	},
-	awebp: config => new aWebp(config)
+	cwebp: (config) => new cWebp(config).run(),
+	awebp: (config) => new aWebp(config).run()
 };
